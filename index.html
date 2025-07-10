@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calidad del Agua - Provincia de Loja</title>
+    <title>Geoportal de Delitos - Quito</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
         * {
             margin: 0;
@@ -13,556 +15,799 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #1976d2, #42a5f5);
-            color: white;
-            padding: 20px 0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .logo-icon {
-            font-size: 2.5rem;
-        }
-
-        .logo-text h1 {
-            font-size: 1.8rem;
-            font-weight: 600;
-        }
-
-        .logo-text p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .stats {
-            display: flex;
-            gap: 30px;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            opacity: 0.9;
+            background: #f5f5f5;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 30px 20px;
-        }
-
-        .controls {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            align-items: end;
-        }
-
-        .form-group {
             display: flex;
-            flex-direction: column;
+            height: 100vh;
         }
 
-        .form-group label {
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #555;
-        }
-
-        .form-group select,
-        .form-group input {
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group select:focus,
-        .form-group input:focus {
-            outline: none;
-            border-color: #1976d2;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #1976d2, #42a5f5);
+        .sidebar {
+            width: 350px;
+            background: #2c3e50;
             color: white;
-            border: none;
-            border-radius: 8px;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #34495e;
+        }
+
+        .logo h1 {
+            color: #3498db;
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: #bdc3c7;
+            font-size: 0.9em;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            background: #34495e;
+            padding: 10px 15px;
+            margin: -5px -10px 15px -10px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
             cursor: pointer;
-            font-weight: 500;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: background 0.3s;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.3);
+        .section-title:hover {
+            background: #4a5f7a;
         }
 
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 30px;
+        .section-title i {
+            margin-right: 10px;
+        }
+
+        .section-content {
+            padding-left: 10px;
+        }
+
+        .layer-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .layer-item:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .layer-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .layer-item label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .layer-count {
+            background: #3498db;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .basemap-selector {
+            margin-bottom: 15px;
+        }
+
+        .basemap-selector select {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            background: #34495e;
+            color: white;
+            font-size: 0.9em;
         }
 
         .map-container {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            flex: 1;
             position: relative;
-            min-height: 600px;
         }
 
-        .map-header {
-            background: #f5f5f5;
-            padding: 15px 20px;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        #map {
+            width: 100%;
+            height: 100%;
         }
 
-        .map-title {
-            font-weight: 600;
-            color: #333;
+        .tabs {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        .map-legend {
-            display: flex;
-            gap: 15px;
-            font-size: 12px;
+        .tab-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+            border-radius: 5px 5px 0 0;
+            transition: background 0.3s;
+        }
+
+        .tab-button:hover {
+            background: #2980b9;
+        }
+
+        .tab-button.active {
+            background: #2c3e50;
+        }
+
+        .form-panel {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            width: 300px;
+            background: white;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: none;
+        }
+
+        .form-panel.active {
+            display: block;
+        }
+
+        .form-panel h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        .coordinates-display {
+            background: rgba(255,255,255,0.9);
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin-top: 10px;
+            font-size: 0.8em;
+            color: #2c3e50;
+        }
+
+        .legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            margin-bottom: 5px;
         }
 
         .legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 8px;
         }
 
-        .map-placeholder {
-            height: 550px;
-            background: linear-gradient(45deg, #e8f5e8, #f0f8ff);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            color: #666;
-            position: relative;
-            overflow: hidden;
+        .search-box {
+            margin-bottom: 20px;
         }
 
-        .water-points {
-            position: absolute;
+        .search-box input {
             width: 100%;
-            height: 100%;
+            padding: 8px;
+            border: 1px solid #34495e;
+            border-radius: 4px;
+            background: #34495e;
+            color: white;
+            font-size: 0.9em;
         }
 
-        .water-point {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: transform 0.2s;
-            border: 2px solid white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        .search-box input::placeholder {
+            color: #bdc3c7;
         }
 
-        .water-point:hover {
-            transform: scale(1.3);
-        }
-
-        .water-point.excellent { background: #4caf50; }
-        .water-point.good { background: #8bc34a; }
-        .water-point.regular { background: #ffc107; }
-        .water-point.poor { background: #ff9800; }
-        .water-point.critical { background: #f44336; }
-
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-
-        .card h3 {
-            margin-bottom: 15px;
-            color: #1976d2;
-            font-size: 1.1rem;
-        }
-
-        .report-item {
-            padding: 15px;
-            border-left: 4px solid #1976d2;
-            background: #f8f9fa;
-            margin-bottom: 15px;
-            border-radius: 0 8px 8px 0;
-        }
-
-        .report-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .report-name {
-            font-weight: 500;
-            color: #333;
-        }
-
-        .report-date {
-            font-size: 0.85rem;
-            color: #666;
-        }
-
-        .report-status {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .status-excellent { background: #e8f5e9; color: #2e7d32; }
-        .status-good { background: #f1f8e9; color: #558b2f; }
-        .status-regular { background: #fff8e1; color: #f57c00; }
-        .status-poor { background: #fff3e0; color: #ef6c00; }
-        .status-critical { background: #ffebee; color: #c62828; }
-
-        .quick-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-
-        .quick-stat {
-            text-align: center;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .quick-stat-number {
-            font-size: 1.5rem;
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
             font-weight: bold;
-            color: #1976d2;
+            z-index: 2000;
+            display: none;
         }
 
-        .quick-stat-label {
-            font-size: 0.85rem;
-            color: #666;
-            margin-top: 5px;
+        .notification.success {
+            background: #27ae60;
         }
 
-        .btn-secondary {
-            background: #f5f5f5;
-            color: #333;
-            border: 1px solid #ddd;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
+        .notification.error {
+            background: #e74c3c;
         }
 
         @media (max-width: 768px) {
-            .header-content {
+            .sidebar {
+                width: 100%;
+                height: 50vh;
+            }
+            
+            .map-container {
+                height: 50vh;
+            }
+            
+            .container {
                 flex-direction: column;
-                gap: 15px;
             }
-
-            .stats {
-                gap: 20px;
-            }
-
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-
-            .controls {
-                grid-template-columns: 1fr;
+            
+            .form-panel {
+                width: calc(100% - 20px);
+                right: 10px;
             }
         }
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">
-                <div class="logo-icon">💧</div>
-                <div class="logo-text">
-                    <h1>Sistema de Monitoreo de Calidad del Agua</h1>
-                    <p>Provincia de Loja - Ecuador</p>
-                </div>
-            </div>
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-number">247</div>
-                    <div class="stat-label">Fuentes Monitoreadas</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">89%</div>
-                    <div class="stat-label">Calidad Aceptable</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">156</div>
-                    <div class="stat-label">Reportes Este Mes</div>
-                </div>
-            </div>
-        </div>
-    </header>
-
     <div class="container">
-        <div class="controls">
-            <div class="form-group">
-                <label for="canton">Cantón:</label>
-                <select id="canton">
-                    <option value="">Todos los cantones</option>
-                    <option value="loja">Loja</option>
-                    <option value="catamayo">Catamayo</option>
-                    <option value="cariamanga">Cariamanga</option>
-                    <option value="alamor">Alamor</option>
-                    <option value="catacocha">Catacocha</option>
-                    <option value="macara">Macará</option>
-                    <option value="zapotillo">Zapotillo</option>
-                    <option value="sozoranga">Sozoranga</option>
-                </select>
+        <div class="sidebar">
+            <div class="logo">
+                <h1><i class="fas fa-map-marked-alt"></i> GeoPortal</h1>
+                <p>Sistema de Monitoreo de Delitos - Quito</p>
             </div>
-            <div class="form-group">
-                <label for="fuente">Tipo de Fuente:</label>
-                <select id="fuente">
-                    <option value="">Todas las fuentes</option>
-                    <option value="rio">Ríos</option>
-                    <option value="quebrada">Quebradas</option>
-                    <option value="pozo">Pozos</option>
-                    <option value="manantial">Manantiales</option>
-                    <option value="reservorio">Reservorios</option>
-                </select>
+
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar en el mapa...">
             </div>
-            <div class="form-group">
-                <label for="fecha">Período:</label>
-                <select id="fecha">
-                    <option value="mes">Último mes</option>
-                    <option value="trimestre">Último trimestre</option>
-                    <option value="semestre">Último semestre</option>
-                    <option value="ano">Último año</option>
-                </select>
+
+            <div class="section">
+                <div class="section-title">
+                    <i class="fas fa-map"></i> Mapas Base
+                </div>
+                <div class="section-content">
+                    <div class="basemap-selector">
+                        <select id="basemapSelector">
+                            <option value="osm">OpenStreetMap</option>
+                            <option value="satellite">Satélite</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <button class="btn" onclick="filtrarReportes()">🔍 Filtrar</button>
+
+            <div class="section">
+                <div class="section-title">
+                    <i class="fas fa-layers"></i> Capas Geográficas
+                </div>
+                <div class="section-content">
+                    <div class="layer-item">
+                        <input type="checkbox" id="barrios" checked>
+                        <label for="barrios">Barrios</label>
+                        <span class="layer-count">-</span>
+                    </div>
+                    <div class="layer-item">
+                        <input type="checkbox" id="parroquias" checked>
+                        <label for="parroquias">Parroquias</label>
+                        <span class="layer-count">-</span>
+                    </div>
+                    <div class="layer-item">
+                        <input type="checkbox" id="adm_zonal">
+                        <label for="adm_zonal">Administraciones Zonales</label>
+                        <span class="layer-count">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <i class="fas fa-exclamation-triangle"></i> Capas de Delitos
+                </div>
+                <div class="section-content">
+                    <div class="layer-item">
+                        <input type="checkbox" id="delitos_generales">
+                        <label for="delitos_generales">Delitos Generales</label>
+                        <span class="layer-count">-</span>
+                    </div>
+                    <div class="layer-item">
+                        <input type="checkbox" id="delitos_sexuales">
+                        <label for="delitos_sexuales">Delitos Sexuales</label>
+                        <span class="layer-count">-</span>
+                    </div>
+                    <div class="layer-item">
+                        <input type="checkbox" id="violencia_intrafamiliar">
+                        <label for="violencia_intrafamiliar">Violencia Intrafamiliar</label>
+                        <span class="layer-count">-</span>
+                    </div>
+                    <div class="layer-item">
+                        <input type="checkbox" id="reportes_delitos" checked>
+                        <label for="reportes_delitos">Reportes de Delitos</label>
+                        <span class="layer-count">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <h4><i class="fas fa-info-circle"></i> Leyenda</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #3498db;"></div>
+                    <span>Límites Administrativos</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #e74c3c;"></div>
+                    <span>Delitos Generales</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #9b59b6;"></div>
+                    <span>Delitos Sexuales</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f39c12;"></div>
+                    <span>Violencia Intrafamiliar</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #27ae60;"></div>
+                    <span>Reportes Ciudadanos</span>
+                </div>
             </div>
         </div>
 
-        <div class="main-content">
-            <div class="map-container">
-                <div class="map-header">
-                    <div class="map-title">📍 Mapa de Calidad del Agua - Provincia de Loja</div>
-                    <div class="map-legend">
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #4caf50;"></div>
-                            <span>Excelente</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #8bc34a;"></div>
-                            <span>Buena</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #ffc107;"></div>
-                            <span>Regular</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #ff9800;"></div>
-                            <span>Deficiente</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #f44336;"></div>
-                            <span>Crítica</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="map-placeholder">
-                    <div style="text-align: center; z-index: 10;">
-                        <div style="font-size: 3rem; margin-bottom: 10px;">🗺️</div>
-                        <div>Mapa Interactivo de la Provincia de Loja</div>
-                        <div style="font-size: 0.9rem; color: #888; margin-top: 10px;">
-                            Aquí se integrará con servicios de mapas como OpenStreetMap o Google Maps
-                        </div>
-                    </div>
-                    <div class="water-points">
-                        <div class="water-point excellent" style="top: 20%; left: 30%;" onclick="mostrarDetalle('Río Catamayo', 'excellent')"></div>
-                        <div class="water-point good" style="top: 35%; left: 45%;" onclick="mostrarDetalle('Quebrada Jipiro', 'good')"></div>
-                        <div class="water-point regular" style="top: 50%; left: 25%;" onclick="mostrarDetalle('Pozo La Banda', 'regular')"></div>
-                        <div class="water-point poor" style="top: 65%; left: 60%;" onclick="mostrarDetalle('Río Piscobamba', 'poor')"></div>
-                        <div class="water-point critical" style="top: 40%; left: 70%;" onclick="mostrarDetalle('Quebrada Seca', 'critical')"></div>
-                        <div class="water-point excellent" style="top: 25%; left: 55%;" onclick="mostrarDetalle('Manantial El Cisne', 'excellent')"></div>
-                        <div class="water-point good" style="top: 75%; left: 35%;" onclick="mostrarDetalle('Río Macará', 'good')"></div>
-                        <div class="water-point regular" style="top: 55%; left: 80%;" onclick="mostrarDetalle('Reservorio Municipal', 'regular')"></div>
-                    </div>
-                </div>
+        <div class="map-container">
+            <div class="tabs">
+                <button class="tab-button active" onclick="showTab('map')">
+                    <i class="fas fa-map"></i> Mapa
+                </button>
+                <button class="tab-button" onclick="showTab('form')">
+                    <i class="fas fa-plus"></i> Reportar
+                </button>
             </div>
 
-            <div class="sidebar">
-                <div class="card">
-                    <h3>📊 Estadísticas Rápidas</h3>
-                    <div class="quick-stats">
-                        <div class="quick-stat">
-                            <div class="quick-stat-number">73</div>
-                            <div class="quick-stat-label">Excelente/Buena</div>
-                        </div>
-                        <div class="quick-stat">
-                            <div class="quick-stat-number">18</div>
-                            <div class="quick-stat-label">Regular</div>
-                        </div>
-                        <div class="quick-stat">
-                            <div class="quick-stat-number">7</div>
-                            <div class="quick-stat-label">Deficiente</div>
-                        </div>
-                        <div class="quick-stat">
-                            <div class="quick-stat-number">2</div>
-                            <div class="quick-stat-label">Crítica</div>
-                        </div>
-                    </div>
-                </div>
+            <div id="map"></div>
 
-                <div class="card">
-                    <h3>🔍 Reportes Recientes</h3>
-                    <div class="report-item">
-                        <div class="report-header">
-                            <div class="report-name">Río Catamayo - Puente San José</div>
-                            <div class="report-date">28/06/2025</div>
-                        </div>
-                        <div class="report-status status-excellent">Excelente</div>
+            <div class="form-panel" id="formPanel">
+                <h3><i class="fas fa-file-alt"></i> Reportar Delito</h3>
+                <form id="reportForm">
+                    <div class="form-group">
+                        <label for="tipoDelito">Tipo de Delito:</label>
+                        <select id="tipoDelito" required>
+                            <option value="">Seleccione...</option>
+                            <option value="robo">Robo</option>
+                            <option value="asalto">Asalto</option>
+                            <option value="vandalismo">Vandalismo</option>
+                            <option value="violencia">Violencia</option>
+                            <option value="trafico">Tráfico</option>
+                            <option value="otro">Otro</option>
+                        </select>
                     </div>
-                    <div class="report-item">
-                        <div class="report-header">
-                            <div class="report-name">Quebrada Jipiro - Sector Norte</div>
-                            <div class="report-date">27/06/2025</div>
-                        </div>
-                        <div class="report-status status-good">Buena</div>
-                    </div>
-                    <div class="report-item">
-                        <div class="report-header">
-                            <div class="report-name">Pozo La Banda - Centro</div>
-                            <div class="report-date">26/06/2025</div>
-                        </div>
-                        <div class="report-status status-regular">Regular</div>
-                    </div>
-                    <div class="report-item">
-                        <div class="report-header">
-                            <div class="report-name">Río Piscobamba - Desembocadura</div>
-                            <div class="report-date">25/06/2025</div>
-                        </div>
-                        <div class="report-status status-poor">Deficiente</div>
-                    </div>
-                </div>
 
-                <div class="card">
-                    <h3>⚡ Acciones Rápidas</h3>
-                    <button class="btn" style="width: 100%; margin-bottom: 10px;" onclick="nuevoReporte()">
-                        ➕ Nuevo Reporte
-                    </button>
-                    <button class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;" onclick="exportarDatos()">
-                        📊 Exportar Datos
-                    </button>
-                    <button class="btn btn-secondary" style="width: 100%;" onclick="generarInforme()">
-                        📋 Generar Informe
-                    </button>
-                </div>
+                    <div class="form-group">
+                        <label for="fecha">Fecha del Incidente:</label>
+                        <input type="date" id="fecha" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hora">Hora del Incidente:</label>
+                        <input type="time" id="hora" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="descripcion">Descripción:</label>
+                        <textarea id="descripcion" placeholder="Describa el incidente..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reportante">Nombre del Reportante:</label>
+                        <input type="text" id="reportante" placeholder="Nombre completo" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefono">Teléfono de Contacto:</label>
+                        <input type="tel" id="telefono" placeholder="Número de teléfono">
+                    </div>
+
+                    <div class="coordinates-display" id="coordinatesDisplay">
+                        <strong>Coordenadas:</strong> Haga clic en el mapa para seleccionar la ubicación
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <button type="button" class="btn" onclick="getCurrentLocation()">
+                            <i class="fas fa-map-marker-alt"></i> Usar Mi Ubicación
+                        </button>
+                        <button type="submit" class="btn btn-success" style="float: right;">
+                            <i class="fas fa-paper-plane"></i> Enviar Reporte
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
+    <div class="notification" id="notification"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        function filtrarReportes() {
-            const canton = document.getElementById('canton').value;
-            const fuente = document.getElementById('fuente').value;
-            const fecha = document.getElementById('fecha').value;
-            
-            console.log('Filtros aplicados:', { canton, fuente, fecha });
-            alert('Filtros aplicados:\n' + 
-                  'Cantón: ' + (canton || 'Todos') + '\n' +
-                  'Fuente: ' + (fuente || 'Todas') + '\n' +
-                  'Período: ' + fecha);
+        // Configuración del mapa
+        const map = L.map('map').setView([-0.1807, -78.4678], 11); // Quito, Ecuador
+
+        // Mapas base
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        });
+
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles © Esri'
+        });
+
+        // Añadir mapa base por defecto
+        osmLayer.addTo(map);
+
+        // Grupos de capas
+        const layerGroups = {
+            barrios: L.layerGroup(),
+            parroquias: L.layerGroup(),
+            adm_zonal: L.layerGroup(),
+            delitos_generales: L.layerGroup(),
+            delitos_sexuales: L.layerGroup(),
+            violencia_intrafamiliar: L.layerGroup(),
+            reportes_delitos: L.layerGroup()
+        };
+
+        // Añadir capas iniciales al mapa
+        layerGroups.barrios.addTo(map);
+        layerGroups.parroquias.addTo(map);
+        layerGroups.reportes_delitos.addTo(map);
+
+        // Variables para el formulario
+        let selectedCoords = null;
+        let reportMarker = null;
+
+        // Datos simulados para demostración
+        const sampleData = {
+            barrios: generateSamplePolygons(50, 'barrio'),
+            parroquias: generateSamplePolygons(15, 'parroquia'),
+            adm_zonal: generateSamplePolygons(8, 'zona'),
+            delitos_generales: generateSamplePolygons(25, 'delito_general'),
+            delitos_sexuales: generateSamplePolygons(8, 'delito_sexual'),
+            violencia_intrafamiliar: generateSamplePolygons(12, 'violencia'),
+            reportes_delitos: generateSamplePoints(30, 'reporte')
+        };
+
+        // Función para generar polígonos de muestra
+        function generateSamplePolygons(count, type) {
+            const polygons = [];
+            const colors = {
+                'barrio': '#3498db',
+                'parroquia': '#2ecc71',
+                'zona': '#f39c12',
+                'delito_general': '#e74c3c',
+                'delito_sexual': '#9b59b6',
+                'violencia': '#e67e22'
+            };
+
+            for (let i = 0; i < count; i++) {
+                const lat = -0.1807 + (Math.random() - 0.5) * 0.5;
+                const lng = -78.4678 + (Math.random() - 0.5) * 0.5;
+                const size = 0.01 + Math.random() * 0.02;
+                
+                const polygon = L.polygon([
+                    [lat, lng],
+                    [lat + size, lng],
+                    [lat + size, lng + size],
+                    [lat, lng + size]
+                ], {
+                    color: colors[type],
+                    weight: 2,
+                    fillOpacity: 0.3
+                }).bindPopup(`${type.replace('_', ' ').toUpperCase()} #${i + 1}`);
+                
+                polygons.push(polygon);
+            }
+            return polygons;
         }
 
-        function mostrarDetalle(nombre, calidad) {
-            const estados = {
-                'excellent': 'Excelente',
-                'good': 'Buena',
-                'regular': 'Regular', 
-                'poor': 'Deficiente',
-                'critical': 'Crítica'
+        // Función para generar puntos de muestra
+        function generateSamplePoints(count, type) {
+            const points = [];
+            const icon = L.divIcon({
+                className: 'custom-marker',
+                html: '<i class="fas fa-map-marker-alt" style="color: #27ae60; font-size: 20px;"></i>',
+                iconSize: [20, 20],
+                iconAnchor: [10, 20]
+            });
+
+            for (let i = 0; i < count; i++) {
+                const lat = -0.1807 + (Math.random() - 0.5) * 0.4;
+                const lng = -78.4678 + (Math.random() - 0.5) * 0.4;
+                
+                const marker = L.marker([lat, lng], { icon })
+                    .bindPopup(`Reporte #${i + 1}<br>Tipo: ${['Robo', 'Asalto', 'Vandalismo'][Math.floor(Math.random() * 3)]}<br>Fecha: ${new Date().toLocaleDateString()}`);
+                
+                points.push(marker);
+            }
+            return points;
+        }
+
+        // Cargar datos simulados en las capas
+        Object.keys(sampleData).forEach(layerName => {
+            sampleData[layerName].forEach(feature => {
+                layerGroups[layerName].addLayer(feature);
+            });
+            
+            // Actualizar contador
+            const countElement = document.querySelector(`#${layerName} + label + .layer-count`);
+            if (countElement) {
+                countElement.textContent = sampleData[layerName].length;
+            }
+        });
+
+        // Eventos de capas
+        document.querySelectorAll('.layer-item input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const layerName = this.id;
+                if (this.checked) {
+                    layerGroups[layerName].addTo(map);
+                } else {
+                    map.removeLayer(layerGroups[layerName]);
+                }
+            });
+        });
+
+        // Cambio de mapa base
+        document.getElementById('basemapSelector').addEventListener('change', function() {
+            const selectedBasemap = this.value;
+            map.eachLayer(layer => {
+                if (layer === osmLayer || layer === satelliteLayer) {
+                    map.removeLayer(layer);
+                }
+            });
+            
+            if (selectedBasemap === 'satellite') {
+                satelliteLayer.addTo(map);
+            } else {
+                osmLayer.addTo(map);
+            }
+        });
+
+        // Función para mostrar/ocultar tabs
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[onclick="showTab('${tabName}')"]`).classList.add('active');
+            
+            if (tabName === 'form') {
+                document.getElementById('formPanel').classList.add('active');
+            } else {
+                document.getElementById('formPanel').classList.remove('active');
+            }
+        }
+
+        // Click en el mapa para seleccionar coordenadas
+        map.on('click', function(e) {
+            if (document.getElementById('formPanel').classList.contains('active')) {
+                selectedCoords = e.latlng;
+                
+                // Remover marcador anterior
+                if (reportMarker) {
+                    map.removeLayer(reportMarker);
+                }
+                
+                // Añadir nuevo marcador
+                const reportIcon = L.divIcon({
+                    className: 'custom-marker',
+                    html: '<i class="fas fa-map-marker-alt" style="color: #e74c3c; font-size: 25px;"></i>',
+                    iconSize: [25, 25],
+                    iconAnchor: [12, 25]
+                });
+                
+                reportMarker = L.marker([e.latlng.lat, e.latlng.lng], { icon: reportIcon })
+                    .addTo(map)
+                    .bindPopup('Ubicación del reporte')
+                    .openPopup();
+                
+                // Actualizar display de coordenadas
+                document.getElementById('coordinatesDisplay').innerHTML = 
+                    `<strong>Coordenadas:</strong> ${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
+            }
+        });
+
+        // Función para obtener ubicación actual
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    selectedCoords = L.latLng(lat, lng);
+                    
+                    // Remover marcador anterior
+                    if (reportMarker) {
+                        map.removeLayer(reportMarker);
+                    }
+                    
+                    // Añadir nuevo marcador
+                    const reportIcon = L.divIcon({
+                        className: 'custom-marker',
+                        html: '<i class="fas fa-map-marker-alt" style="color: #e74c3c; font-size: 25px;"></i>',
+                        iconSize: [25, 25],
+                        iconAnchor: [12, 25]
+                    });
+                    
+                    reportMarker = L.marker([lat, lng], { icon: reportIcon })
+                        .addTo(map)
+                        .bindPopup('Su ubicación actual')
+                        .openPopup();
+                    
+                    // Centrar mapa en la ubicación
+                    map.setView([lat, lng], 15);
+                    
+                    // Actualizar display de coordenadas
+                    document.getElementById('coordinatesDisplay').innerHTML = 
+                        `<strong>Coordenadas:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                }, function() {
+                    showNotification('No se pudo obtener su ubicación', 'error');
+                });
+            } else {
+                showNotification('Geolocalización no soportada', 'error');
+            }
+        }
+
+        // Envío del formulario
+        document.getElementById('reportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!selectedCoords) {
+                showNotification('Por favor seleccione una ubicación en el mapa', 'error');
+                return;
+            }
+            
+            // Simular envío a base de datos
+            const formData = {
+                tipo: document.getElementById('tipoDelito').value,
+                fecha: document.getElementById('fecha').value,
+                hora: document.getElementById('hora').value,
+                descripcion: document.getElementById('descripcion').value,
+                reportante: document.getElementById('reportante').value,
+                telefono: document.getElementById('telefono').value,
+                lat: selectedCoords.lat,
+                lng: selectedCoords.lng
             };
             
-            alert('📍 ' + nombre + '\n\n' +
-                  '💧 Estado: ' + estados[calidad] + '\n' +
-                  '📅 Última medición: ' + new Date().toLocaleDateString('es-ES') + '\n' +
-                  '🔬 pH: ' + (Math.random() * 3 + 6).toFixed(1) + '\n' +
-                  '🌡️ Temperatura: ' + (Math.random() * 10 + 15).toFixed(1) + '°C');
+            // Simular delay de envío
+            setTimeout(() => {
+                // Añadir nuevo reporte al mapa
+                const newReportIcon = L.divIcon({
+                    className: 'custom-marker',
+                    html: '<i class="fas fa-map-marker-alt" style="color: #27ae60; font-size: 20px;"></i>',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 20]
+                });
+                
+                const newReportMarker = L.marker([selectedCoords.lat, selectedCoords.lng], { icon: newReportIcon })
+                    .bindPopup(`
+                        <strong>Nuevo Reporte</strong><br>
+                        Tipo: ${formData.tipo}<br>
+                        Fecha: ${formData.fecha}<br>
+                        Reportante: ${formData.reportante}
+                    `);
+                
+                layerGroups.reportes_delitos.addLayer(newReportMarker);
+                
+                // Limpiar formulario
+                document.getElementById('reportForm').reset();
+                selectedCoords = null;
+                if (reportMarker) {
+                    map.removeLayer(reportMarker);
+                    reportMarker = null;
+                }
+                document.getElementById('coordinatesDisplay').innerHTML = 
+                    '<strong>Coordenadas:</strong> Haga clic en el mapa para seleccionar la ubicación';
+                
+                // Actualizar contador
+                const currentCount = parseInt(document.querySelector('#reportes_delitos + label + .layer-count').textContent);
+                document.querySelector('#reportes_delitos + label + .layer-count').textContent = currentCount + 1;
+                
+                showNotification('Reporte enviado exitosamente', 'success');
+                showTab('map');
+            }, 1000);
+        });
+
+        // Función para mostrar notificaciones
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
         }
 
-        function nuevoReporte() {
-            alert('🆕 Redirigiendo al formulario de nuevo reporte...');
-        }
+        // Establecer fecha actual por defecto
+        document.getElementById('fecha').valueAsDate = new Date();
 
-        function exportarDatos() {
-            alert('📊 Generando archivo de exportación...');
-        }
-
-        function generarInforme() {
-            alert('📋 Generando informe PDF...');
-        }
-
-        // Actualizar estadísticas cada 30 segundos (simulado)
-        setInterval(() => {
-            console.log('Actualizando datos en tiempo real...');
-        }, 30000);
+        // Búsqueda simple
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const searchTerm = this.value.toLowerCase();
+                // Aquí implementarías la lógica de búsqueda
+                showNotification(`Buscando: ${searchTerm}`, 'success');
+            }
+        });
     </script>
 </body>
 </html>
