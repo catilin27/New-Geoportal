@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geoportal - Capas Geográficas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .container {
+            display: flex;
+            height: calc(100vh - 80px);
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .layer-control {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .layer-control h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        
+        .layer-item {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .layer-item input[type="checkbox"] {
+            transform: scale(1.2);
+        }
+        
+        .layer-item label {
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+        
+        .color-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 2px solid #333;
+        }
+        
+        .status {
+            background: #ecf0f1;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        .loading {
+            color: #f39c12;
+        }
+        
+        .error {
+            color: #e74c3c;
+        }
+        
+        .success {
+            color: #27ae60;
+        }
+        
+        .legend {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .legend h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗺️ Geoportal - Capas Geográficas</h1>
+    </div>
+    
+    <div class="container">
+        <div class="sidebar">
+            <div class="layer-control">
+                <h3>🏛️ Capas Administrativas</h3>
+                <div class="layer-item">
+                    <input type="checkbox" id="parroquias" data-layer="PARROQUIAS_REF">
+                    <div class="color-indicator" style="background: rgba(52, 152, 219, 0.3);"></div>
+                    <label for="parroquias">Parroquias</label>
+                </div>
+                <div class="layer-item">
+                    <input type="checkbox" id="barrios" data-layer="BARRIO_REF">
+                    <div class="color-indicator" style="background: rgba(46, 204, 113, 0.3);"></div>
+                    <label for="barrios">Barrios</label>
+                </div>
+                <div class="layer-item">
+                    <input type="checkbox" id="adm_zonal" data-layer="adm_zonal_a">
+                    <div class="color-indicator" style="background: rgba(155, 89, 182, 0.3);"></div>
+                    <label for="adm_zonal">Zonas Administrativas</label>
+                </div>
+            </div>
+            
+            <div class="layer-control">
+                <h3>🚨 Capas de Seguridad</h3>
+                <div class="layer-item">
+                    <input type="checkbox" id="delitos" data-layer="delitos_a">
+                    <div class="color-indicator" style="background: rgba(231, 76, 60, 0.3);"></div>
+                    <label for="delitos">Delitos Generales</label>
+                </div>
+                <div class="layer-item">
+                    <input type="checkbox" id="delitos_sexuales" data-layer="delitos_sexuales_a">
+                    <div class="color-indicator" style="background: rgba(192, 57, 43, 0.3);"></div>
+                    <label for="delitos_sexuales">Delitos Sexuales</label>
+                </div>
+                <div class="layer-item">
+                    <input type="checkbox" id="violencia_intrafamiliar" data-layer="violencia_intrafamiliar_a">
+                    <div class="color-indicator" style="background: rgba(142, 68, 173, 0.3);"></div>
+                    <label for="violencia_intrafamiliar">Violencia Intrafamiliar</label>
+                </div>
+                <div class="layer-item">
+                    <input type="checkbox" id="reportes" data-layer="reportes_delitos">
+                    <div class="color-indicator" style="background: rgba(241, 196, 15, 1);"></div>
+                    <label for="reportes">Reportes de Delitos</label>
+                </div>
+            </div>
+            
+            <div class="status" id="status">
+                Listo para cargar capas...
+            </div>
+            
+            <div class="legend">
+                <h3>📊 Leyenda</h3>
+                <div class="legend-item">
+                    <div class="color-indicator" style="background: rgba(52, 152, 219, 0.3); width: 15px; height: 15px;"></div>
+                    <span>Límites Parroquiales</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-indicator" style="background: rgba(46, 204, 113, 0.3); width: 15px; height: 15px;"></div>
+                    <span>Límites de Barrios</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-indicator" style="background: rgba(241, 196, 15, 1); width: 15px; height: 15px;"></div>
+                    <span>Reportes Puntuales</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-indicator" style="background: rgba(231, 76, 60, 0.3); width: 15px; height: 15px;"></div>
+                    <span>Áreas de Delitos</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script>
+        // Configuración de Supabase
+        const SUPABASE_URL = 'https://zurhoebcegnzzfkfbgkx.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1cmhvZWJjZWduenpma2ZiZ2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0Mjg4NzIsImV4cCI6MjA2NzAwNDg3Mn0.MwAPIqlV2YBToM48yMiSpd3MjdK3Zdd4uM4n5IFfwvE';
+        
+        // Inicializar el mapa centrado en Quito
+        const map = L.map('map').setView([-0.1807, -78.4678], 11);
+        
+        // Capa base
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Almacenar las capas cargadas
+        const loadedLayers = {};
+        
+        // Colores para cada capa
+        const layerStyles = {
+            'PARROQUIAS_REF': {
+                color: '#3498db',
+                fillColor: '#3498db',
+                fillOpacity: 0.3,
+                weight: 2
+            },
+            'BARRIO_REF': {
+                color: '#2ecc71',
+                fillColor: '#2ecc71',
+                fillOpacity: 0.3,
+                weight: 1
+            },
+            'adm_zonal_a': {
+                color: '#9b59b6',
+                fillColor: '#9b59b6',
+                fillOpacity: 0.3,
+                weight: 2
+            },
+            'delitos_a': {
+                color: '#e74c3c',
+                fillColor: '#e74c3c',
+                fillOpacity: 0.3,
+                weight: 1
+            },
+            'delitos_sexuales_a': {
+                color: '#c0392b',
+                fillColor: '#c0392b',
+                fillOpacity: 0.3,
+                weight: 1
+            },
+            'violencia_intrafamiliar_a': {
+                color: '#8e44ad',
+                fillColor: '#8e44ad',
+                fillOpacity: 0.3,
+                weight: 1
+            },
+            'reportes_delitos': {
+                color: '#f1c40f',
+                fillColor: '#f1c40f',
+                fillOpacity: 1,
+                weight: 1,
+                radius: 6
+            }
+        };
+        
+        // Función para actualizar el status
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+        
+        // Función para cargar datos de Supabase
+        async function loadLayerData(tableName) {
+            try {
+                updateStatus(`Cargando ${tableName}...`, 'loading');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/${tableName}?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                updateStatus(`${tableName} cargado: ${data.length} registros`, 'success');
+                
+                return data;
+            } catch (error) {
+                updateStatus(`Error cargando ${tableName}: ${error.message}`, 'error');
+                console.error('Error:', error);
+                return [];
+            }
+        }
+        
+        // Función para crear popup con información
+        function createPopup(properties, layerName) {
+            let content = `<strong>${layerName}</strong><br>`;
+            
+            // Mostrar propiedades relevantes
+            Object.entries(properties).forEach(([key, value]) => {
+                if (key !== 'geom' && value !== null && value !== undefined) {
+                    content += `<strong>${key}:</strong> ${value}<br>`;
+                }
+            });
+            
+            return content;
+        }
+        
+        // Función para agregar capa al mapa
+        function addLayerToMap(data, layerName) {
+            const style = layerStyles[layerName];
+            let layer;
+            
+            if (layerName === 'reportes_delitos') {
+                // Para puntos
+                layer = L.layerGroup();
+                data.forEach(item => {
+                    if (item.latitud && item.longitud) {
+                        const marker = L.circleMarker([item.latitud, item.longitud], {
+                            ...style,
+                            radius: style.radius
+                        });
+                        marker.bindPopup(createPopup(item, layerName));
+                        layer.addLayer(marker);
+                    }
+                });
+            } else {
+                // Para polígonos
+                layer = L.layerGroup();
+                data.forEach(item => {
+                    if (item.geom && item.geom.coordinates) {
+                        try {
+                            let coordinates = item.geom.coordinates;
+                            
+                            // Manejar diferentes tipos de geometría
+                            if (item.geom.type === 'MultiPolygon') {
+                                coordinates.forEach(polygon => {
+                                    const leafletPolygon = L.polygon(
+                                        polygon.map(ring => 
+                                            ring.map(coord => [coord[1], coord[0]])
+                                        ),
+                                        style
+                                    );
+                                    leafletPolygon.bindPopup(createPopup(item, layerName));
+                                    layer.addLayer(leafletPolygon);
+                                });
+                            } else if (item.geom.type === 'Polygon') {
+                                const leafletPolygon = L.polygon(
+                                    coordinates.map(ring => 
+                                        ring.map(coord => [coord[1], coord[0]])
+                                    ),
+                                    style
+                                );
+                                leafletPolygon.bindPopup(createPopup(item, layerName));
+                                layer.addLayer(leafletPolygon);
+                            }
+                        } catch (error) {
+                            console.error(`Error procesando geometría de ${layerName}:`, error);
+                        }
+                    }
+                });
+            }
+            
+            loadedLayers[layerName] = layer;
+            layer.addTo(map);
+            
+            // Ajustar vista si es la primera capa
+            if (Object.keys(loadedLayers).length === 1) {
+                try {
+                    map.fitBounds(layer.getBounds());
+                } catch (error) {
+                    console.log('No se pudo ajustar la vista automáticamente');
+                }
+            }
+        }
+        
+        // Función para manejar el cambio de estado de los checkboxes
+        function handleLayerToggle(checkbox) {
+            const layerName = checkbox.dataset.layer;
+            
+            if (checkbox.checked) {
+                if (!loadedLayers[layerName]) {
+                    loadLayerData(layerName).then(data => {
+                        if (data && data.length > 0) {
+                            addLayerToMap(data, layerName);
+                        } else {
+                            updateStatus(`No hay datos disponibles para ${layerName}`, 'error');
+                            checkbox.checked = false;
+                        }
+                    });
+                } else {
+                    map.addLayer(loadedLayers[layerName]);
+                    updateStatus(`${layerName} mostrado`, 'success');
+                }
+            } else {
+                if (loadedLayers[layerName]) {
+                    map.removeLayer(loadedLayers[layerName]);
+                    updateStatus(`${layerName} ocultado`, 'info');
+                }
+            }
+        }
+        
+        // Agregar event listeners a los checkboxes
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', () => handleLayerToggle(checkbox));
+        });
+        
+        // Cargar capa de barrios por defecto
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStatus('Geoportal inicializado. Selecciona las capas que deseas visualizar.', 'success');
+        });
+    </script>
+</body>
+</html>
