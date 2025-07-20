@@ -364,15 +364,7 @@
     <div id="layersPanel" class="layers-panel">
         <h3><i class="fa-solid fa-layer-group"></i> Control de Capas</h3>
         
-        <!--<div class="layer-group">
-            <h4>📍 Datos de Siniestros</h4>
-            <div class="layer-item">
-                <input type="checkbox" class="layer-checkbox" id="siniestros" checked onchange="toggleLayer('siniestros')">
-                <div class="layer-color" style="background: linear-gradient(45deg, #ff4444, #ff8800, #4CAF50);"></div>
-                <label class="layer-label" for="siniestros">Siniestros Viales</label>
-                <span class="layer-count" id="siniestros-count">0</span>
-            </div>
-        </div>-->
+        
 
         <div class="layer-group">
             <h4><i class="fa-solid fa-map-location-dot"></i> División Administrativa</h4>
@@ -403,6 +395,7 @@
         </div>
 
         <div class="layer-group">
+		
             <h4><i class="fa-solid fa-square-h"></i> Establecimientos de Salud</h4>
             <div class="layer-item">
 				<div class="layer-color" style="background-color: #e74c3c;"></div>
@@ -419,6 +412,17 @@
                 
                 
                 <!--<span class="layer-count" id="establecimientos_salud_municipales-count">0</span>-->
+            </div>
+        </div>
+		<div class="layer-group">
+            <h4><i class="fa-solid fa-car-burst"></i>Siniestros</h4>
+            <div class="layer-item">
+				<div class="layer-color" style="background: #39FF14;"></div>
+				<label class="layer-label" for="siniestros">Siniestros      </label>
+                <input type="checkbox" class="layer-checkbox" id="siniestros" checked onchange="toggleLayer('siniestros')">
+                <!--<div class="layer-color" style="background: #39FF14;"></div>-->
+                
+                <!--<<span class="layer-count" id="siniestros-count">0</span>-->
             </div>
         </div>
 
