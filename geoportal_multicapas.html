@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geoportal de Siniestros - Ecuador</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Header */
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            z-index: 1001;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Mapa */
+        #map {
+            height: calc(100vh - 80px);
+            width: 100%;
+        }
+        
+        /* Controles principales */
+        .controls {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        /* Panel de capas */
+        .layers-panel {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            min-width: 250px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        
+        .layers-panel h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 16px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        
+        .layer-group {
+            margin-bottom: 20px;
+        }
+        
+        .layer-group h4 {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        
+        .layer-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .layer-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .layer-checkbox {
+            margin-right: 10px;
+        }
+        
+        .layer-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+        }
+        
+        .layer-label {
+            font-size: 13px;
+            color: #444;
+            cursor: pointer;
+        }
+        
+        .layer-count {
+            margin-left: auto;
+            font-size: 11px;
+            color: #888;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: #27ae60;
+        }
+        
+        .btn-success:hover {
+            background: #219a52;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        /* Modal del formulario */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 2% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            background: #3498db;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .close:hover {
+            opacity: 0.7;
+        }
+        
+        /* Estilos del formulario */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .col {
+            flex: 1;
+        }
+        
+        .required {
+            color: red;
+        }
+        
+        .success {
+            color: green;
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .error {
+            color: red;
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        /* Popup del mapa */
+        .leaflet-popup-content {
+            font-family: Arial, sans-serif;
+            line-height: 1.4;
+        }
+        
+        .popup-header {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .popup-info {
+            margin-bottom: 5px;
+        }
+        
+        .popup-label {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        /* Toggle panel button */
+        .toggle-panel {
+            position: absolute;
+            top: 100px;
+            left: -5px;
+            z-index: 1001;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 8px;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            writing-mode: vertical-lr;
+            text-orientation: mixed;
+            font-size: 12px;
+        }
+        
+        .toggle-panel:hover {
+            background: #2980b9;
+        }
+        
+        .layers-panel.hidden {
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 10px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                top: 90px;
+                right: 10px;
+            }
+            
+            .layers-panel {
+                width: calc(100% - 40px);
+                left: 20px;
+                top: 120px;
+                max-height: 300px;
+            }
+            
+            .btn {
+                padding: 10px 12px;
+                font-size: 12px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1> Geoportal de Reportes de Accidentes de Transito</h1>
+        <p>Distrito Metropolitano de Quito - Ecuador</p>
+    </div>
+
+    <!-- Mapa -->
+    <div id="map"></div>
+
+    <!-- Botón para mostrar/ocultar panel de capas -->
+    <button class="toggle-panel" onclick="toggleLayersPanel()">CAPAS</button>
+
+    <!-- Panel de capas -->
+    <div id="layersPanel" class="layers-panel">
+        <h3><i class="fa-solid fa-layer-group"></i> Control de Capas</h3>
+        
+        <!--<div class="layer-group">
+            <h4>📍 Datos de Siniestros</h4>
+            <div class="layer-item">
+                <input type="checkbox" class="layer-checkbox" id="siniestros" checked onchange="toggleLayer('siniestros')">
+                <div class="layer-color" style="background: linear-gradient(45deg, #ff4444, #ff8800, #4CAF50);"></div>
+                <label class="layer-label" for="siniestros">Siniestros Viales</label>
+                <span class="layer-count" id="siniestros-count">0</span>
+            </div>
+        </div>-->
+
+        <div class="layer-group">
+            <h4><i class="fa-solid fa-map-location-dot"></i> División Administrativa</h4>
+            <div class="layer-item">
+				<div class="layer-color" style="background-color: #9b59b6;"></div>
+				<label class="layer-label" for="adm_zonal_a">Administraciones Zonales</label>
+                <input type="checkbox" class="layer-checkbox" id="adm_zonal_a" onchange="toggleLayer('adm_zonal_a')">
+                
+                
+                <!--<span class="layer-count" id="adm_zonal_a-count">0</span>-->
+            </div>
+            <div class="layer-item">
+				<div class="layer-color" style="background-color: #34495e;"></div>
+				<label class="layer-label" for="parroquia_ref">Parroquias</label>
+                <input type="checkbox" class="layer-checkbox" id="parroquia_ref" onchange="toggleLayer('parroquia_ref')">
+                
+                
+                <!--<span class="layer-count" id="parroquia_ref-count">0</span>-->
+            </div>
+            <div class="layer-item">
+				 <div class="layer-color" style="background-color: #16a085;"></div>
+				 <label class="layer-label" for="barrio_ref">Barrios</label>
+                <input type="checkbox" class="layer-checkbox" id="barrio_ref" onchange="toggleLayer('barrio_ref')">
+               
+                
+                <!--<span class="layer-count" id="barrio_ref-count">0</span>-->
+            </div>
+        </div>
+
+        <div class="layer-group">
+            <h4><i class="fa-solid fa-square-h"></i> Establecimientos de Salud</h4>
+            <div class="layer-item">
+				<div class="layer-color" style="background-color: #e74c3c;"></div>
+				<label class="layer-label" for="est_salud_mdmq_p">Est. Salud MDMQ</label>
+                <input type="checkbox" class="layer-checkbox" id="est_salud_mdmq_p" onchange="toggleLayer('est_salud_mdmq_p')">
+                
+                
+                <!--<span class="layer-count" id="est_salud_mdmq_p-count">0</span>-->
+            </div>
+            <div class="layer-item">
+				<div class="layer-color" style="background-color: #f39c12;"></div>
+				<label class="layer-label" for="establecimientos_salud_municipales">Est. Salud Municipales</label>
+                <input type="checkbox" class="layer-checkbox" id="establecimientos_salud_municipales" onchange="toggleLayer('establecimientos_salud_municipales')">
+                
+                
+                <!--<span class="layer-count" id="establecimientos_salud_municipales-count">0</span>-->
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee;">
+            <button class="btn" onclick="loadAllLayers()" style="width: 100%; margin-bottom: 5px;">
+                🔄 Actualizar Todas las Capas
+            </button>
+            <button class="btn btn-danger" onclick="clearAllLayers()" style="width: 100%;">
+                🗑️ Limpiar Todas las Capas
+            </button>
+        </div>
+    </div>
+
+    <!-- Controles principales -->
+    <div class="controls">
+        <button class="btn btn-success" onclick="openModal()">
+            📍 Reportar Siniestro
+        </button>
+        <button class="btn" onclick="loadSiniestros()">
+            🔄 Actualizar Siniestros
+        </button>
+    </div>
+
+    <!-- Modal del formulario (igual que el original) -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Reportar Nuevo Siniestro</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="siniestroForm">
+                    <div class="form-group">
+                        <label for="nombre">Nombre <span class="required">*</span></label>
+                        <input type="text" id="nombre" name="nombre" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="fecha">Fecha <span class="required">*</span></label>
+                                <input type="date" id="fecha" name="fecha" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="hora">Hora <span class="required">*</span></label>
+                                <input type="time" id="hora" name="hora" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="latitud">Latitud <span class="required">*</span></label>
+                                <input type="number" id="latitud" name="latitud" step="0.000001" required 
+                                       placeholder="Ej: -1.234567">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="longitud">Longitud <span class="required">*</span></label>
+                                <input type="number" id="longitud" name="longitud" step="0.000001" required 
+                                       placeholder="Ej: -78.123456">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="parroquia">Parroquia</label>
+                        <input type="text" id="parroquia" name="parroquia">
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="calle_principal">Calle Principal</label>
+                                <input type="text" id="calle_principal" name="calle_principal">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="calle_secundaria">Calle Secundaria</label>
+                                <input type="text" id="calle_secundaria" name="calle_secundaria">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tipo_siniestro">Tipo de Siniestro <span class="required">*</span></label>
+                        <select id="tipo_siniestro" name="tipo_siniestro" required>
+                            <option value="">Seleccione una opción</option>
+                            <option value="estrellamiento">Estrellamiento</option>
+                            <option value="atropello">Atropello</option>
+                            <option value="choque">Choque</option>
+                            <option value="caida">Caída</option>
+                            <option value="colisión">Colisión</option>
+                            <option value="pérdida_de_carril">Pérdida de carril</option>
+                            <option value="atipico">Atípico</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="causa">Causa</label>
+                        <textarea id="causa" name="causa" placeholder="Describa la causa del siniestro"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="danos">Tipo de Daños <span class="required">*</span></label>
+                                <select id="danos" name="danos" required>
+                                    <option value="">Seleccione una opción</option>
+                                    <option value="materiales">Materiales</option>
+                                    <option value="lesionados">Lesionados</option>
+                                    <option value="fallecidos">Fallecidos</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="numero_vehiculos">Número de Vehículos</label>
+                                <input type="number" id="numero_vehiculos" name="numero_vehiculos" min="0" value="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 20px;">
+                        Registrar Siniestro
+                    </button>
+                </form>
+
+                <div id="message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    
+    <script>
+        // Configuración de Supabase
+        const SUPABASE_URL = 'https://zurhoebcegnzzfkfbgkx.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1cmhvZWJjZWduenpma2ZiZ2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0Mjg4NzIsImV4cCI6MjA2NzAwNDg3Mn0.MwAPIqlV2YBToM48yMiSpd3MjdK3Zdd4uM4n5IFfwvE';
+
+        // Inicializar mapa centrado en Ecuador
+        const map = L.map('map').setView([-1.8312, -78.1834], 7);
+
+        // Añadir capa base
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Capas para diferentes tipos de datos
+        const layers = {
+            siniestros: L.layerGroup().addTo(map),
+            adm_zonal_a: L.layerGroup(),
+            parroquia_ref: L.layerGroup(),
+            barrio_ref: L.layerGroup(),
+            est_salud_mdmq_p: L.layerGroup(),
+            establecimientos_salud_municipales: L.layerGroup()
+        };
+
+        // Configuración de estilos para cada capa
+        const layerStyles = {
+            adm_zonal_a: {
+                color: '#9b59b6',
+                weight: 2,
+                fillOpacity: 0.3,
+                fillColor: '#9b59b6'
+            },
+            parroquia_ref: {
+                color: '#34495e',
+                weight: 1.5,
+                fillOpacity: 0.2,
+                fillColor: '#34495e'
+            },
+            barrio_ref: {
+                color: '#16a085',
+                weight: 1,
+                fillOpacity: 0.1,
+                fillColor: '#16a085'
+            }
+        };
+
+        // Función para obtener color según tipo de daño (siniestros)
+        function getColor(dano) {
+            switch (dano) {
+                case 'fallecidos': return '#ff4444';
+                case 'lesionados': return '#ff8800';
+                case 'materiales': return '#4CAF50';
+                default: return '#666';
+            }
+        }
+
+        // Función para crear popup de siniestros
+        function createSiniestroPopup(siniestro) {
+            return `
+                <div class="popup-header">🚨 ${siniestro.tipo_siniestro.toUpperCase()}</div>
+                <div class="popup-info"><span class="popup-label">Nombre:</span> ${siniestro.nombre}</div>
+                <div class="popup-info"><span class="popup-label">Fecha:</span> ${siniestro.fecha}</div>
+                <div class="popup-info"><span class="popup-label">Hora:</span> ${siniestro.hora}</div>
+                <div class="popup-info"><span class="popup-label">Ubicación:</span> ${siniestro.parroquia || 'No especificada'}</div>
+                <div class="popup-info"><span class="popup-label">Calle:</span> ${siniestro.calle_principal || 'No especificada'}</div>
+                <div class="popup-info"><span class="popup-label">Daños:</span> ${siniestro.danos}</div>
+                <div class="popup-info"><span class="popup-label">Vehículos:</span> ${siniestro.numero_vehiculos}</div>
+                ${siniestro.causa ? `<div class="popup-info"><span class="popup-label">Causa:</span> ${siniestro.causa}</div>` : ''}
+            `;
+        }
+
+        // Función para crear popup de establecimientos de salud
+        function createHealthPopup(establishment) {
+            return `
+                <div class="popup-header">🏥 ${establishment.nombre || establishment.nom_estab || 'Establecimiento de Salud'}</div>
+                <div class="popup-info"><span class="popup-label">Tipo:</span> ${establishment.tipo || establishment.categoria || 'No especificado'}</div>
+                <div class="popup-info"><span class="popup-label">Dirección:</span> ${establishment.direccion || establishment.dir_estab || 'No especificada'}</div>
+                ${establishment.telefono ? `<div class="popup-info"><span class="popup-label">Teléfono:</span> ${establishment.telefono}</div>` : ''}
+                ${establishment.parroquia ? `<div class="popup-info"><span class="popup-label">Parroquia:</span> ${establishment.parroquia}</div>` : ''}
+            `;
+        }
+
+        // Función para crear popup de divisiones administrativas
+        function createAdminPopup(admin, layerType) {
+            const icons = {
+                adm_zonal_a: '🏛️',
+                parroquia_ref: '📍',
+                barrio_ref: '🏘️'
+            };
+            
+            return `
+                <div class="popup-header">${icons[layerType]} ${admin.nom_adm || admin.des_parroq || admin.nom_barrio || 'División Administrativa'}</div>
+                <div class="popup-info"><span class="popup-label">Código:</span> ${admin.cod_adm || admin.cod_parroq || admin.cod_barrio || 'No disponible'}</div>
+                ${admin.area ? `<div class="popup-info"><span class="popup-label">Área:</span> ${admin.area} ha</div>` : ''}
+                ${admin.poblacion ? `<div class="popup-info"><span class="popup-label">Población:</span> ${admin.poblacion}</div>` : ''}
+            `;
+        }
+
+        // Función genérica para cargar datos de cualquier tabla
+        async function loadLayerData(tableName) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/${tableName}?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log(`Cargados ${data.length} registros de ${tableName}`);
+                    return data;
+                } else {
+                    console.error(`Error al cargar ${tableName}:`, response.status);
+                    return [];
+                }
+            } catch (error) {
+                console.error(`Error de conexión para ${tableName}:`, error);
+                return [];
+            }
+        }
+
+        // Cargar siniestros
+        async function loadSiniestros() {
+            const data = await loadLayerData('siniestros');
+            layers.siniestros.clearLayers();
+            
+            data.forEach(siniestro => {
+                if (siniestro.latitud && siniestro.longitud) {
+                    const marker = L.circleMarker([siniestro.latitud, siniestro.longitud], {
+                        color: '#fff',
+                        fillColor: getColor(siniestro.danos),
+                        fillOpacity: 0.8,
+                        radius: 8,
+                        weight: 2
+                    });
+                    
+                    marker.bindPopup(createSiniestroPopup(siniestro));
+                    layers.siniestros.addLayer(marker);
+                }
+            });
+            
+            updateLayerCount('siniestros', data.length);
+        }
+
+        // Cargar establecimientos de salud (puntos)
+        async function loadHealthEstablishments(tableName) {
+            const data = await loadLayerData(tableName);
+            layers[tableName].clearLayers();
+            
+            const color = tableName === 'est_salud_mdmq_p' ? '#e74c3c' : '#f39c12';
+            
+            data.forEach(establishment => {
+                // Buscar coordenadas en diferentes campos posibles
+                const lat = establishment.latitud || establishment.lat || establishment.y || establishment.coordenada_y;
+                const lng = establishment.longitud || establishment.lng || establishment.lon || establishment.x || establishment.coordenada_x;
+                
+                if (lat && lng) {
+                    const marker = L.circleMarker([parseFloat(lat), parseFloat(lng)], {
+                        color: '#fff',
+                        fillColor: color,
+                        fillOpacity: 0.7,
+                        radius: 6,
+                        weight: 2
+                    });
+                    
+                    marker.bindPopup(createHealthPopup(establishment));
+                    layers[tableName].addLayer(marker);
+                }
+            });
+            
+            updateLayerCount(tableName, data.length);
+        }
+
+        // Cargar divisiones administrativas (polígonos)
+        async function loadAdministrativeDivisions(tableName) {
+            const data = await loadLayerData(tableName);
+            layers[tableName].clearLayers();
+            
+            data.forEach(admin => {
+                // Verificar si hay geometría en el campo 'geom' o similar
+                if (admin.geom || admin.geometry || admin.the_geom) {
+                    try {
+                        let geometry = admin.geom || admin.geometry || admin.the_geom;
+                        
+                        // Si la geometría es un string, parsearlo como JSON
+                        if (typeof geometry === 'string') {
+                            geometry = JSON.parse(geometry);
+                        }
+                        
+                        // Crear la capa usando la geometría GeoJSON
+                        const layer = L.geoJSON(geometry, {
+                            style: layerStyles[tableName],
+                            onEachFeature: function(feature, layer) {
+                                layer.bindPopup(createAdminPopup(admin, tableName));
+                            }
+                        });
+                        
+                        layers[tableName].addLayer(layer);
+                    } catch (error) {
+                        console.warn(`Error procesando geometría para ${tableName}:`, error);
+                    }
+                }
+            });
+            
+            updateLayerCount(tableName, data.length);
+        }
+
+        // Función para alternar visibilidad de capas
+        function toggleLayer(layerName) {
+            const checkbox = document.getElementById(layerName);
+            if (checkbox.checked) {
+                if (!map.hasLayer(layers[layerName])) {
+                    map.addLayer(layers[layerName]);
+                    loadLayerByType(layerName);
+                }
+            } else {
+                if (map.hasLayer(layers[layerName])) {
+                    map.removeLayer(layers[layerName]);
+                }
+            }
+        }
+
+        // Función para cargar capa según su tipo
+        async function loadLayerByType(layerName) {
+            switch (layerName) {
+                case 'siniestros':
+                    await loadSiniestros();
+                    break;
+                case 'est_salud_mdmq_p':
+                case 'establecimientos_salud_municipales':
+                    await loadHealthEstablishments(layerName);
+                    break;
+                case 'adm_zonal_a':
+                case 'parroquia_ref':
+                case 'barrio_ref':
+                    await loadAdministrativeDivisions(layerName);
+                    break;
+            }
+        }
+
+        // Actualizar contador de elementos en una capa
+        function updateLayerCount(layerName, count) {
+            const countElement = document.getElementById(`${layerName}-count`);
+            if (countElement) {
+                countElement.textContent = count;
+            }
+        }
+
+        // Función para mostrar/ocultar panel de capas
+        function toggleLayersPanel() {
+            const panel = document.getElementById('layersPanel');
+            panel.classList.toggle('hidden');
+        }
+
+        // Cargar todas las capas
+        async function loadAllLayers() {
+            const checkboxes = document.querySelectorAll('.layer-checkbox:checked');
+            for (const checkbox of checkboxes) {
+                await loadLayerByType(checkbox.id);
+            }
+        }
+
+        // Limpiar todas las capas
+        function clearAllLayers() {
+            Object.keys(layers).forEach(layerName => {
+                layers[layerName].clearLayers();
+                updateLayerCount(layerName, 0);
+            });
+        }
+
+        // Limpiar solo el mapa de siniestros (función original)
+        function clearMap() {
+            layers.siniestros.clearLayers();
+            updateLayerCount('siniestros', 0);
+        }
+
+        // Funciones del modal (mantener las originales)
+        function openModal() {
+            document.getElementById('formModal').style.display = 'block';
+            getCurrentLocation();
+            setCurrentDateTime();
+        }
+
+        function closeModal() {
+            document.getElementById('formModal').style.display = 'none';
+            document.getElementById('message').innerHTML = '';
+        }
+
+        // Función para obtener ubicación actual
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        document.getElementById('latitud').value = position.coords.latitude.toFixed(6);
+                        document.getElementById('longitud').value = position.coords.longitude.toFixed(6);
+                    },
+                    function(error) {
+                        console.log('Error obteniendo ubicación:', error);
+                    }
+                );
+            }
+        }
+
+        // Función para establecer fecha y hora actual
+        function setCurrentDateTime() {
+            const now = new Date();
+            document.getElementById('fecha').value = now.toISOString().split('T')[0];
+            document.getElementById('hora').value = now.toTimeString().slice(0, 5);
+        }
+
+        // Manejo del formulario de siniestros
+        document.getElementById('siniestroForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = '';
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            data.latitud = parseFloat(data.latitud);
+            data.longitud = parseFloat(data.longitud);
+            data.numero_vehiculos = parseInt(data.numero_vehiculos) || 0;
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/siniestros`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    messageDiv.innerHTML = '<div class="success">Siniestro registrado exitosamente</div>';
+                    this.reset();
+                    setCurrentDateTime();
+                    getCurrentLocation();
+                    loadSiniestros(); // Recargar los datos en el mapa
+                    setTimeout(() => {
+                        closeModal();
+                    }, 2000);
+                } else {
+                    const error = await response.json();
+                    messageDiv.innerHTML = '<div class="error">Error al registrar: ' + (error.message || 'Error desconocido') + '</div>';
+                }
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="error">Error de conexión: ' + error.message + '</div>';
+            }
+        });
+
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('formModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar datos iniciales (solo siniestros por defecto)
+            loadSiniestros();
+            
+            // Configurar actualización automática solo para siniestros
+            setInterval(loadSiniestros, 30000);
+        });
+    </script>
+</body>
+</html>
